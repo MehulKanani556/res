@@ -12,7 +12,7 @@
   publish = "build/"
 
   # Your build command.
-  command = "npm run build"
+# CI= npm run build
 
 [[redirects]]
   from = "/*"
