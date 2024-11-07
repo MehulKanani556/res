@@ -16,7 +16,6 @@ const DeliveryDots = () => {
     const API = process.env.REACT_APP_IMAGE_URL;
     const token = localStorage.getItem("token");
     const userName = localStorage.getItem("name");
-    const [errors, setErrors] = useState({});
     const noteInputRefs = useRef({});
     const [cartItems, setCartItems] = useState(
         JSON.parse(localStorage.getItem("cartItems")) || []
@@ -25,6 +24,7 @@ const DeliveryDots = () => {
     const [orderType, setOrderType] = useState(
         JSON.parse(localStorage.getItem("currentOrder")) || []
     );
+    const [orderTypeError, setOrderTypeError] = useState("")
 
     const navigate = useNavigate();
     // const { state} = useLocation();
@@ -49,7 +49,7 @@ const DeliveryDots = () => {
         if (noteInputRefs.current[index]) {
             noteInputRefs.current[index].value = newNote;
         }
-        
+
         // Debounce the state update to reduce re-renders
         const timeoutId = setTimeout(() => {
             setCartItems(prevItems => {
@@ -77,7 +77,7 @@ const DeliveryDots = () => {
                 : item
         );
         setCartItems(updatedCartItems);
-        
+
         // Focus the input after state update
         setTimeout(() => {
             if (noteInputRefs.current[index]) {
@@ -203,7 +203,7 @@ const DeliveryDots = () => {
     const handleFinishEditing = (index) => {
         // Get final value from ref
         const finalNote = noteInputRefs.current[index]?.value || "";
-        
+
         setCartItems(prevItems => {
             const updatedItems = [...prevItems];
             updatedItems[index] = {
@@ -236,9 +236,9 @@ const DeliveryDots = () => {
         return (
             <div>
                 {item.note ? (
-                    <p 
-                        className="j-nota-blue" 
-                        style={{ cursor: "pointer" }} 
+                    <p
+                        className="j-nota-blue"
+                        style={{ cursor: "pointer" }}
                         onClick={() => handleAddNoteClick(index)}
                     >
                         {item.note}
@@ -269,30 +269,70 @@ const DeliveryDots = () => {
     const [rut2, setRut2] = useState("");
     const [rut3, setRut3] = useState("");
 
-    // const handleRutChange = (e, setRut) => {
-    //   let value = e.target.value.replace(/[^0-9kK-]/g, ""); // Remove any existing hyphen
-    //   if (value.length > 6) {
-    //     value = value.slice(0, 6) + "-" + value.slice(6);
-    //   }
-    //   setRut(value);
-    //   // Clear the RUT error
-    //   setErrors((prevErrors) => ({
-    //     ...prevErrors,
-    //     rut: undefined
-    //   }));
-    // };
+    // Create refs for form inputs
+    const formRefs = {
+        fname: useRef(),
+        lname: useRef(),
+        tour: useRef(),
+        address: useRef(),
+        email: useRef(),
+        number: useRef(),
+        bname: useRef(),
+        rut1: useRef(),
+        rut2: useRef(),
+        rut3: useRef(),
+        ltda: useRef()  // Added ltda ref
+    };
 
-    const handleRutChange = (e, setRut) => {
+    // Create a ref to store errors without causing re-renders
+    const errorsRef = useRef({});
+    const [errors, setErrors] = useState({});
+
+    // Update handleInputChange to properly handle select elements
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+
+        // Update formData state for select elements
+        if (name === 'ltda') {
+            setFormData(prevData => ({
+                ...prevData,
+                ltda: value
+            }));
+        }
+
+        // Check if the ref exists before accessing current
+        if (formRefs[name]) {
+            formRefs[name].current.value = value;
+
+            // Clear errors for the specific field
+            if (errors[name] || (name === 'bname' && errors.business_name)) {
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    [name]: undefined,
+                    business_name: name === 'bname' ? undefined : prevErrors.business_name
+                }));
+            }
+        }
+    };
+
+    // Update handleRutChange to only clear RUT error
+    const handleRutChange = (e, rutRef) => {
         let value = e.target.value.replace(/[^0-9]/g, "");
         if (value.length > 6) {
             value = value.slice(0, 6) + "-" + value.slice(6);
         }
-        setRut(value);
-        setErrors((prevErrors) => ({
-            ...prevErrors,
-            rut: undefined,
-        }));
+        rutRef.current.value = value;
+
+        // Only clear RUT error if it exists
+        if (errors.rut) {
+            setErrors(prevErrors => ({
+                ...prevErrors,
+                rut: undefined
+            }));
+        }
     };
+
+    console.log("sasdasd");
 
 
     // ***************************************************API**************************************************
@@ -308,98 +348,86 @@ const DeliveryDots = () => {
         bname: "",
         tipoEmpresa: "0"
     });
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prevState) => ({
-            ...prevState,
-            [name]: value
-        }));
-        // Clear the specific error for business_name and ltda when typing
-        if (name === "bname") {
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                business_name: undefined
-            }));
-        } else if (name === "ltda") {
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                ltda: undefined
-            }));
-        } else {
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                [name]: undefined
-            }));
-        }
-    };
 
     const collectAccordionData = () => {
         const commonData = {
             receiptType: selectedRadio,
-            rut: selectedRadio === "1" ? rut1 : selectedRadio === "2" ? rut2 : rut3,
-            firstname: formData.fname,
-            lastname: formData.lname,
-            tour: formData.tour,
-            address: formData.address,
-            email: formData.email,
-            phone: formData.number
+            rut: selectedRadio === "1" ? formRefs.rut1.current.value :
+                selectedRadio === "2" ? formRefs.rut2.current.value : formRefs.rut3.current.value,
+            firstname: formRefs.fname.current.value,
+            lastname: formRefs.lname.current.value,
+            tour: formRefs.tour.current.value,
+            address: formRefs.address.current.value,
+            email: formRefs.email.current.value,
+            phone: formRefs.number.current.value,
+            // ltda: formRefs.ltda.current.value  // Added ltda ref
         };
 
         let specificData = {};
-
         if (selectedRadio === "3") {
             specificData = {
-                business_name: formData.bname,
-                ltda: formData.ltda
+                business_name: formRefs.bname.current.value,
+                ltda: formRefs.ltda.current.value  // Keep this in state since it's a select
             };
         }
 
         return { ...commonData, ...specificData };
     };
-    const validateForm = (data) => {
-        const errors = {};
 
-        // RUT validation
-        if (!data.rut || data.rut.length < 7) {
-            errors.rut = "El RUT debe tener al menos 7 caracteres";
-        }
-
-        // Name validation
-        if (data.receiptType !== "3") {
-            if (!data.firstname || data.firstname.trim() === "") {
-                errors.fname = "Se requiere el primer nombre";
+    const validateForm = () => {
+        const data = collectAccordionData();
+        const newErrors = {};
+        if (data.receiptType !== "4") {
+            // RUT validation
+            if (!data.rut || data.rut.length < 7) {
+                newErrors.rut = "El RUT debe tener al menos 7 caracteres";
             }
-        }
-        console.log(data)
-        // Business name validation for receipt type 4
-        if (data.receiptType === "3") {
-            if (!data.business_name || data.business_name.trim() === "") {
-                errors.business_name = "Se requiere el nombre de la empresa";
+
+            // Name validation
+            if (data.receiptType !== "3") {
+                if (!data.firstname || data.firstname.trim() === "") {
+                    newErrors.fname = "Se requiere el primer nombre";
+                }
             }
-            if (!data.ltda || data.ltda === "0") {
-                errors.ltda = "Seleccione una opción";
+            // console.log(data)
+            // Business name validation for receipt type 4
+            if (data.receiptType === "3") {
+                if (!data.business_name || data.business_name.trim() === "") {
+                    newErrors.business_name = "Se requiere el nombre de la empresa";
+                }
+                if (!data.ltda || data.ltda === "0") {
+                    newErrors.ltda = "Seleccione una opción";
+                }
             }
+
+            // Last name validation
+            if (!data.lastname || data.lastname.trim() === "") {
+                newErrors.lname = "El apellido es obligatorio";
+            }
+
+            // Tour validation
+            if (!data.tour || data.tour.trim() === "") {
+                newErrors.tour = "Se requiere tour";
+            }
+
+            // Address validation
+            if (!data.address || data.address.trim() === "") {
+                newErrors.address = "La dirección es necesaria";
+            }
+
         }
 
-        // Last name validation
-        if (!data.lastname || data.lastname.trim() === "") {
-            errors.lname = "El apellido es obligatorio";
-        }
-
-        // Tour validation
-        if (!data.tour || data.tour.trim() === "") {
-            errors.tour = "Se requiere tour";
-        }
-
-        // Address validation
-        if (!data.address || data.address.trim() === "") {
-            errors.address = "La dirección es necesaria";
-        }
-
-
-        return errors;
+        setErrors(newErrors);
+        return newErrors;
+        // return errors;
     };
     const handleSubmit = () => {
+        if (!orderType || orderType?.orderType == 0) {
+            // console.log("Dgd");
+            // setOrderTypeError("Por favor seleccione tipo de pedido");
+            setOrderTypeError("Por favor seleccione un tipo de pedido");
+            return;
+        }
         const collectedData = collectAccordionData();
         const validationErrors = validateForm(collectedData);
 
@@ -424,6 +452,12 @@ const DeliveryDots = () => {
         setOrderType(storedOrder);
     }, []);
     const handleOrderTypeChange = (e) => {
+
+        if (e.target.value == 0) {
+            setOrderTypeError("Por favor seleccione un tipo de pedido");
+        } else {
+            setOrderTypeError("");
+        }
         const newOrderType = e.target.value;
         const updatedOrder = { ...orderType, orderType: newOrderType };
         setOrderType(updatedOrder);
@@ -550,8 +584,9 @@ const DeliveryDots = () => {
                                                             <input
                                                                 type="text"
                                                                 name="rut"
-                                                                value={rut1}
-                                                                onChange={(e) => handleRutChange(e, setRut1)}
+                                                                ref={formRefs.rut1}
+                                                                defaultValue={rut1}
+                                                                onChange={(e) => handleRutChange(e, formRefs.rut1)}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
                                                             {errors.rut && <div className="text-danger errormessage">{errors.rut}</div>}
@@ -563,7 +598,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="fname"
                                                                 name="fname"
-                                                                value={formData.fname}
+                                                                ref={formRefs.fname}
+                                                                defaultValue={formData.fname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -576,7 +612,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="lname"
-                                                                value={formData.lname}
+                                                                ref={formRefs.lname}
+                                                                defaultValue={formData.lname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -589,7 +626,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="tour"
-                                                                value={formData.tour}
+                                                                ref={formRefs.tour}
+                                                                defaultValue={formData.tour}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -602,7 +640,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="address"
-                                                                value={formData.address}
+                                                                ref={formRefs.address}
+                                                                defaultValue={formData.address}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -614,7 +653,8 @@ const DeliveryDots = () => {
                                                             <input
                                                                 type="text"
                                                                 id="id" name="email"
-                                                                value={formData.email}
+                                                                ref={formRefs.email}
+                                                                defaultValue={formData.email}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -627,7 +667,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="number"
-                                                                value={formData.number}
+                                                                ref={formRefs.number}
+                                                                defaultValue={formData.number}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -673,8 +714,9 @@ const DeliveryDots = () => {
                                                             <input
                                                                 type="text"
                                                                 name="rut"
-                                                                value={rut2}
-                                                                onChange={(e) => handleRutChange(e, setRut2)}
+                                                                ref={formRefs.rut2}
+                                                                defaultValue={rut2}
+                                                                onChange={(e) => handleRutChange(e, formRefs.rut2)}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
                                                             {errors.rut && <div className="text-danger errormessage">{errors.rut}</div>}
@@ -686,7 +728,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="fname"
-                                                                value={formData.fname}
+                                                                ref={formRefs.fname}
+                                                                defaultValue={formData.fname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -699,7 +742,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="lname"
-                                                                value={formData.lname}
+                                                                ref={formRefs.lname}
+                                                                defaultValue={formData.lname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -712,7 +756,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="tour"
-                                                                value={formData.tour}
+                                                                ref={formRefs.tour}
+                                                                defaultValue={formData.tour}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -725,7 +770,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="address"
-                                                                value={formData.address}
+                                                                ref={formRefs.address}
+                                                                defaultValue={formData.address}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -738,7 +784,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="email"
-                                                                value={formData.email}
+                                                                ref={formRefs.email}
+                                                                defaultValue={formData.email}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -751,7 +798,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="number"
-                                                                value={formData.number}
+                                                                ref={formRefs.number}
+                                                                defaultValue={formData.number}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -797,8 +845,9 @@ const DeliveryDots = () => {
                                                             <input
                                                                 type="text"
                                                                 name="rut"
-                                                                value={rut3}
-                                                                onChange={(e) => handleRutChange(e, setRut3)}
+                                                                ref={formRefs.rut3}
+                                                                defaultValue={rut3}
+                                                                onChange={(e) => handleRutChange(e, formRefs.rut3)}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
                                                             {errors.rut && <div className="text-danger errormessage">{errors.rut}</div>}
@@ -810,7 +859,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="bname"
-                                                                value={formData.bname}
+                                                                ref={formRefs.bname}
+                                                                defaultValue={formData.bname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -821,7 +871,8 @@ const DeliveryDots = () => {
                                                             <label className="mb-2">Sa, Ltda, Spa </label>
                                                             <select
                                                                 name="ltda"
-                                                                value={formData.ltda}
+                                                                defaultValue={formData.ltda}// Add fallback to "0"
+                                                                ref={formRefs.ltda}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white form-select">
                                                                 <option value="0">Seleccionar opción</option>
@@ -838,7 +889,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="lname"
-                                                                value={formData.lname}
+                                                                ref={formRefs.lname}
+                                                                defaultValue={formData.lname}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -851,7 +903,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="tour"
-                                                                value={formData.tour}
+                                                                ref={formRefs.tour}
+                                                                defaultValue={formData.tour}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -864,7 +917,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="address"
-                                                                value={formData.address}
+                                                                ref={formRefs.address}
+                                                                defaultValue={formData.address}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -877,7 +931,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="email"
-                                                                value={formData.email}
+                                                                ref={formRefs.email}
+                                                                defaultValue={formData.email}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -890,7 +945,8 @@ const DeliveryDots = () => {
                                                                 type="text"
                                                                 id="id"
                                                                 name="number"
-                                                                value={formData.number}
+                                                                ref={formRefs.number}
+                                                                defaultValue={formData.number}
                                                                 onChange={handleInputChange}
                                                                 className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
                                                             />
@@ -900,10 +956,9 @@ const DeliveryDots = () => {
                                             </div>
                                         </Accordion.Body>
                                     </Accordion.Item>
-                                    {/* <Accordion.Item eventKey="4" className="mb-3">
+                                    <Accordion.Item eventKey="4" className="mb-3">
                                         <Accordion.Header>
                                             {" "}
-                                           
                                             <div
                                                 onClick={() => handleAccordionClick("4")}
                                                 className={`sj_bg_dark j_td_mp sj_w-75 ${activeAccordionItem ===
@@ -919,121 +974,14 @@ const DeliveryDots = () => {
                                                     onChange={() => setSelectedRadio("4")}
                                                     className="me-2 j-radio-checkbox"
                                                 />
-                                                <p className="d-inline px-3">Factura:</p>
+                                                <p className="d-inline px-3">Recibo personal</p>
                                             </div>
                                         </Accordion.Header>
                                         <Accordion.Body>
-                                            <div className="sj_gay_border px-3 py-4 mt-2 j_tb_size ">
-                                                <form>
-                                                    <div className="row j_col_width">
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Rut </label>
-                                                            <input
-                                                                type="text"
-                                                                name="rut"
-                                                                value={rut3}
-                                                                onChange={(e) => handleRutChange(e, setRut3)}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                            {errors.rut && <div className="text-danger errormessage">{errors.rut}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Razón Social </label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="bname"
-                                                                value={formData.bname}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                            {errors.business_name && <div className="text-danger errormessage">{errors.business_name}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Sa, Ltda, Spa </label>
-                                                            <select
-                                                                name="ltda"
-                                                                value={formData.ltda}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white form-select">
-                                                                <option value="0">Seleccionar opción</option>
-                                                                <option value="sa">Sa</option>
-                                                                <option value="ltda">Ltda</option>
-                                                                <option value="spa">Spa</option>
-                                                            </select>
-                                                            {errors.ltda && <div className="text-danger errormessage">{errors.ltda}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Apellido Paterno</label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="lname"
-                                                                value={formData.lname}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                            {errors.lname && <div className="text-danger errormessage">{errors.lname}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Giro </label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="tour"
-                                                                value={formData.tour}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                            {errors.tour && <div className="text-danger errormessage">{errors.tour}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 mb-2">
-                                                            <label className="mb-2">Dirección </label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="address"
-                                                                value={formData.address}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                            {errors.address && <div className="text-danger errormessage">{errors.address}</div>}
-
-                                                        </div>
-                                                        <div className="col-6 ">
-                                                            <label className="mb-2">E-mail (opcional) </label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="email"
-                                                                value={formData.email}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                        </div>
-                                                        <div className="col-6 ">
-                                                            <label className="mb-2">
-                                                                Teléfono móvil (opcional){" "}
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                id="id"
-                                                                name="number"
-                                                                value={formData.number}
-                                                                onChange={handleInputChange}
-                                                                className="sj_bg_dark sj_width_input ps-2 pe-4 py-2 text-white"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                            {/* <div className="sj_gay_border px-3 py-4 mt-2 j_tb_size ">
+                                            </div> */}
                                         </Accordion.Body>
-                                    </Accordion.Item> */}
+                                    </Accordion.Item>
                                     {/* <Accordion.Item eventKey="3" >
                                         <Accordion.Header>
                                             <div onClick={() => handleAccordionClick("4")}
@@ -1103,10 +1051,26 @@ const DeliveryDots = () => {
                         style={{ top: "77px" }}
                     >
                         <div className="j_position_fixed j_b_hd_width ak-position">
-                            <h2 className="text-white j-tbl-text-13">Resumen</h2>
+                            {/* <h2 className="text-white j-tbl-text-13">Resumen</h2> */}
                             <div className="j-counter-price-data ak-w-100">
-                            <h3 className="text-white mt-3 j-tbl-text-13 ak-w-100">Datos</h3>
-                                <div className="b-date-time b_date_time2 d-flex flex-wrap column-gap-3 me-2 justify-content-end text-white">
+                                <div className="b-summary-center mb-4 align-items-center text-white d-flex justify-content-between">
+                                    {/* <div className="j_position_fixed j_b_hd_width"> */}
+                                    <h2 class="text-white j-kds-body-text-1000 mb-0">Resumen</h2>
+                                    {/* <FaXmark className="b-icon" /> */}
+                                </div>
+                                <div className="b-date-time d-flex flex-wrap column-gap-3 align-items-center justify-content-end text-white">
+                                    <div>
+                                        <FaCalendarAlt className="mb-1" />
+                                        <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleDateString('en-GB')}</p>
+                                    </div>
+                                    <div>
+                                        <MdOutlineAccessTimeFilled className="mb-1" />
+                                        <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </div>
+                                </div>
+                                <h3 className="text-white j-kds-body-text-1000 ak-w-100">Datos</h3>
+                                {/* <h3 className="text-white mt-3 j-tbl-text-13 ak-w-100">Datos</h3> */}
+                                {/* <div className="b-date-time b_date_time2 d-flex flex-wrap column-gap-3 me-2 justify-content-end text-white">
                                     <div>
                                         <FaCalendarAlt className="mb-2" />
                                         <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleDateString('en-GB')}</p>
@@ -1115,8 +1079,8 @@ const DeliveryDots = () => {
                                         <MdOutlineAccessTimeFilled className="mb-2" />
                                         <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
-                                </div>
-                                <div className="j_td_center ak-w-100">
+                                </div> */}
+                                {/* <div className="j_td_center ak-w-100">
                                     <div className="j-busy-table j_busy_table_last d-flex align-items-center">
                                         <div className=''>
                                             <div style={{ fontWeight: "600", borderRadius: "10px" }} className={`bj-delivery-text-2  b_btn1 mb-3  p-0 text-nowrap d-flex  align-items-center justify-content-center 
@@ -1124,10 +1088,10 @@ const DeliveryDots = () => {
                                                 {orderType?.orderType?.toLowerCase() === 'local' ? 'Local' : orderType?.orderType?.toLowerCase().includes("with") ? 'Retiro ' : orderType?.orderType?.toLowerCase() === 'delivery' ? 'Entrega' : orderType?.orderType?.toLowerCase() === 'uber' ? 'Uber' : orderType?.orderType}
                                             </div>
                                         </div>
-                                        {/* <div className="j-b-table" /> */}
-                                        {/* <p className="j-table-color j-tbl-font-6">Ocupado</p> */}
+                                        <div className="j-b-table" />
+                                        <p className="j-table-color j-tbl-font-6">Ocupado</p>
                                     </div>
-                                    {/* <div className="b-date-time b_date_time2  d-flex align-items-center">
+                                    <div className="b-date-time b_date_time2  d-flex align-items-center">
                                         <svg
                                             class="j-canvas-svg-i"
                                             aria-hidden="true"
@@ -1147,11 +1111,55 @@ const DeliveryDots = () => {
                                         <p className="mb-0 ms-2 me-3 text-white j-tbl-font-6">
                                             {elapsedTime}
                                         </p>
-                                    </div> */}
+                                    </div>
 
-                                </div>
+                                </div> */}
                                 <div className="j-counter-price-data">
-                                <div className="j-orders-inputs j_td_inputs ak-w-100">
+                                    <form className="d-flex flex-wrap w-100">
+                                        <div className="j-orders-type ak-w-50">
+                                            <label className="j-label-name  text-white mb-2 j-tbl-font-6 ">
+                                                Tipo pedido
+                                            </label>
+                                            <select
+                                                className="form-select j-input-name-2 j-input-name-23 ak-input"
+                                                onChange={handleOrderTypeChange}
+                                                value={orderType.orderType}
+                                            // value={orType.orderType}
+                                            >
+                                                <option value="0">Seleccionar</option>
+                                                <option value="delivery">Entrega</option>
+                                                <option value="local">Local</option>
+                                                <option value="withdraw">Retirar</option>
+                                            </select>
+                                            {orderTypeError && (
+                                                <div className="text-danger errormessage">{orderTypeError}</div>
+                                            )}
+                                        </div>
+                                        <div className="align-content-end mt-2 ak-w-50">
+                                            {/* {console.log(orderType)} */}
+
+                                            {(orderType && orderType.orderType != 0) && <div
+                                                className={`bj-delivery-text-2  b_btn1 m-1 p-2 ${orderType.orderType?.toLowerCase() === 'local'
+                                                    ? 'b_indigo'
+                                                    : orderType.orderType?.toLowerCase() === 'delivery'
+                                                        ? 'b_blue'
+                                                        : orderType.orderType?.toLowerCase().includes("with")
+                                                            ? 'b_purple'
+                                                            : 'b_ora text-danger'
+                                                    }`}
+                                            >
+                                                {orderType.orderType?.toLowerCase() === 'local'
+                                                    ? 'Local'
+                                                    : orderType.orderType?.toLowerCase().includes("with")
+                                                        ? 'Retirar'
+                                                        : orderType.orderType?.toLowerCase() === 'delivery'
+                                                            ? 'Entrega'
+                                                            : orderType.orderType}
+                                            </div>}
+
+                                        </div>
+                                    </form>
+                                    {/* <div className="j-orders-inputs j_td_inputs ak-w-100">
                                         <div className="j-orders-code ak-w-100">
                                             <label className="j-label-name text-white mb-2 j-tbl-btn-font-1">
                                                 Quién registra
@@ -1167,7 +1175,7 @@ const DeliveryDots = () => {
                                                 />
                                             </div>
                                         </div>
-                                        {/* <div className="j-orders-code">
+                                        <div className="j-orders-code">
                                             <label className="j-label-name j-tbl-btn-font-1 text-white mb-2">
                                             Personas
                                             </label>
@@ -1180,8 +1188,8 @@ const DeliveryDots = () => {
 
                                                 />
                                             </div>
-                                        </div> */}
-                                    </div>
+                                        </div>
+                                    </div> */}
                                     <div className="j-counter-order ak-w-100">
                                         {cartItems.length === 0 ? (
                                             <div>

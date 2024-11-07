@@ -21,6 +21,7 @@ const Counter = () => {
   const API = process.env.REACT_APP_IMAGE_URL;
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [role] = useState(localStorage.getItem("role"));
+  const userName = localStorage.getItem("name");
   // const [ tId, setTId ] = useState(queryValue);
   const navigate = useNavigate();
 
@@ -38,11 +39,11 @@ const Counter = () => {
   const [lastOrder, setLastOrder] = useState('');
   const [isEditing, setIsEditing] = useState([]);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [orderType, setOrderType] = useState("");
+  const [orderType, setOrderType] = useState("local");
   const [orType, setOrType] = useState([]);
   const location = useLocation();
   const redirect = location?.state?.from
-  
+
   const [admin_id, setAdminId] = useState(localStorage.getItem("admin_id"));
   // Add ref for note inputs
   const noteInputRefs = useRef({});
@@ -122,7 +123,7 @@ const Counter = () => {
     if (noteInputRefs.current[index]) {
       noteInputRefs.current[index].value = newNote;
     }
-    
+
     // Debounce the state update to reduce re-renders
     const timeoutId = setTimeout(() => {
       setCartItems(prevItems => {
@@ -142,7 +143,7 @@ const Counter = () => {
         : item
     );
     setCartItems(updatedCartItems);
-    
+
     // Focus the input after state update
     setTimeout(() => {
       if (noteInputRefs.current[index]) {
@@ -154,7 +155,7 @@ const Counter = () => {
   const handleFinishEditing = (index) => {
     // Get final value from ref
     const finalNote = noteInputRefs.current[index]?.value || "";
-    
+
     setCartItems(prevItems => {
       const updatedItems = [...prevItems];
       updatedItems[index] = {
@@ -189,9 +190,9 @@ const Counter = () => {
     return (
       <div>
         {item.note ? (
-          <p 
-            className="j-nota-blue" 
-            style={{ cursor: "pointer" }} 
+          <p
+            className="j-nota-blue"
+            style={{ cursor: "pointer" }}
             onClick={() => handleAddNoteClick(index)}
           >
             {item.note}
@@ -547,7 +548,7 @@ const Counter = () => {
         <div className="j-sidebar-nav j-bg-color">
           <Sidenav />
         </div>
-        <div className="j-counter-menu sidebar">
+        <div className="j-counter-menu sidebar" style={{ overflow: "hidden" }}>
           <div className="j-counter-header j_counter_header_last_change">
             <h2 className="text-white mb-3 sjfs-18">Mostrador</h2>
             <div className="j-menu-bg-color ">
@@ -677,7 +678,25 @@ const Counter = () => {
                     disabled
                   />
                 </div>
-                <div className="j-orders-type ak-w-50">
+                <div className="mb-3 b-input-registers ak-w-50">
+                <label
+                    htmlFor="exampleFormControlInput1"
+                    className="form-label text-white"
+                  >Quién lo registra
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control b-form-control ak-input"
+                    id="exampleFormControlInput1"
+                    placeholder=""
+                    // onChange={handlename}
+                    value={userName}
+                    disabled
+                  />
+
+                  {orderTypeError && <div className="text-danger errormessage">{orderTypeError}</div>}
+                </div>
+                {/* <div className="j-orders-type ak-w-50">
                   <label className="j-label-name  text-white mb-2 j-tbl-font-6 ">
                     Tipo pedido
                   </label>
@@ -694,7 +713,7 @@ const Counter = () => {
                   {orderTypeError && (
                     <div className="text-danger errormessage">{orderTypeError}</div>
                   )}
-                </div>
+                </div> */}
               </div>
               {cartItems.length === 0 ? (
                 <div>

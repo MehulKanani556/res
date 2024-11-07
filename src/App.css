@@ -1351,8 +1351,8 @@ td {
 .btn.show,
 .btn:first-child:active,
 :not(.btn-check)+.btn:active {
-  border: 1px solid transparent !important;
-  /* / border: none !important; / */
+  /* border: 1px solid transparent !important; */
+   border: none !important; 
 }
 input[placeholder],
 [placeholder],
@@ -5674,6 +5674,7 @@ select:focus-visible {
   width: 45px;
   font-size: 22px;
   border-radius: 50%;
+  position:relative;
 }
 
 .no-caret:hover {
@@ -5783,8 +5784,11 @@ select:focus-visible {
 
 .j-chat-fixed {
   position: absolute;
-  top: 20px;
-  left: 27px;
+  /* top: 17px; */
+  /* left: 28px; */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
 }
 
 .j-profile-dataa p {
@@ -6120,7 +6124,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 71% !important;
     left: 729px !important;
-    height: 881px !important;
+    /* height: 881px !important; */
   }
 
   .j-footer-set-left {
@@ -6155,7 +6159,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 69% !important;
     left: 702px !important;
-    height: 758px !important;
+    /* height: 758px !important; */
   }
 
   .j-footer-set-left {
@@ -6168,7 +6172,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 67% !important;
     left: 729px !important;
-    height: 732px !important;
+    /* height: 732px !important; */
   }
 
   .j-chat-position-fixed {
@@ -6191,7 +6195,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 70% !important;
     left: 684px !important;
-    height: 720px !important;
+    /* height: 720px !important; */
   }
 
   .j-footer-set-left {
@@ -6209,7 +6213,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 67% !important;
     left: 668px !important;
-    height: 670px !important;
+    /* height: 670px !important; */
   }
 
   .j-footer-set-left {
@@ -6227,7 +6231,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 67% !important;
     left: 637px !important;
-    height: 578px !important;
+    /* height: 578px !important; */
   }
 
   .j-footer-set-left {
@@ -6245,7 +6249,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 67% !important;
     left: 623px !important;
-    height: 612px !important;
+    /* height: 612px !important; */
   }
 
   .j-footer-set-left {
@@ -6262,7 +6266,7 @@ select:focus-visible {
 
   .j-chat-margin {
     left: 618px !important;
-    height: 540px !important;
+    /* height: 540px !important; */
   }
 
   .j-footer-set-left {
@@ -6280,7 +6284,7 @@ select:focus-visible {
 
   .j-chat-margin {
     width: 67% !important;
-    height: 525px !important;
+    /* height: 525px !important; */
     left: 613px !important;
   }
 
@@ -6494,7 +6498,7 @@ select:focus-visible {
   }
 
   .j-chat-margin {
-    height: 525px !important;
+    /* height: 525px !important; */
   }
 }
 
@@ -6530,7 +6534,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 65.5% !important;
     left: 491px !important;
-    height: 525px !important;
+    /* height: 525px !important; */
   }
 
   .j-chat-position-fixed {
@@ -6544,7 +6548,7 @@ select:focus-visible {
   }
 
   .j-left-padding {
-    padding: 0px 10px 0px 610px !important;
+    /* padding: 0px 10px 0px 610px !important; */
   }
 }
 
@@ -6565,7 +6569,7 @@ select:focus-visible {
   }
 
   .j-left-padding {
-    padding: 0px 10px 0px 500px !important;
+    /* padding: 0px 10px 0px 500px !important; */
   }
 }
 
@@ -6611,7 +6615,7 @@ select:focus-visible {
 
   .j-chat-margin {
     width: 60% !important;
-    left: 435px !important;
+    left: 444px !important;
   }
 
   .j-footer-set-left {
@@ -6647,7 +6651,7 @@ select:focus-visible {
 
   .j-left-padding {
     margin-right: 25px;
-    padding: 0px 5px 0px 300px !important;
+    /* padding: 0px 5px 0px 300px !important; */
   }
 
   .j-padding-right {
@@ -6664,7 +6668,7 @@ select:focus-visible {
   .j-chat-margin {
     width: 52% !important;
     left: 425px !important;
-    height: 537px !important;
+    /* height: 537px !important; */
   }
 
   .j-footer-set-left {
@@ -6772,7 +6776,7 @@ select:focus-visible {
 
   .j-left-padding {
     margin-right: 5px;
-    padding: 0px 5px 0px 50px !important;
+    /* padding: 0px 5px 0px 50px !important; */
   }
 
   .j-footer-set-left {
@@ -8466,7 +8470,7 @@ select:focus-visible {
   }
 
   .j-chat-margin {
-    height: 510px !important;
+    /* height: 510px !important; */
   }
 }
 
@@ -8480,7 +8484,7 @@ select:focus-visible {
   }
 
   .j-chat-margin {
-    height: 490px !important;
+    /* height: 490px !important; */
   }
 }
 

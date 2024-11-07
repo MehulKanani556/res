@@ -113,7 +113,7 @@ const Home_pedidos_payment_edit = ({ item }) => {
         getSubFamily();
         setActiveTab(state ? state : "home")
         setIsProcessing(false);
-    }, [ show1Prod, deleteProductId]);
+    }, [show1Prod, deleteProductId]);
 
     useEffect(() => {
         if (orderData && items.length > 0) {
@@ -128,10 +128,10 @@ const Home_pedidos_payment_edit = ({ item }) => {
     }, [orderData, items, show1Prod, deleteProductId]);
 
     useEffect(() => {
-        if (user && roles.length > 0) {
-            getuserRole();
+        if (user) {
+            setUserRole(user.name);
         }
-    }, [user, roles]);
+    }, [user]);
 
     const getOrder = async () => {
         try {
@@ -153,21 +153,23 @@ const Home_pedidos_payment_edit = ({ item }) => {
     const getItems = async () => {
         setIsProcessing(true);
         try {
-          const response = await axios.get(`${apiUrl}/item/getAllDeletedAt`,{headers: {
-            Authorization: `Bearer ${token}`
-          }});
-          setItems(response.data.items);
-          setObj1(response.data.items.filter(v=> v.deleted_at == null));
-          // setFilteredMenuItems(response.data.items);
-          setFilteredItemsMenu(response.data.items.filter(v=> v.deleted_at == null));
+            const response = await axios.get(`${apiUrl}/item/getAllDeletedAt`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setItems(response.data.items);
+            setObj1(response.data.items.filter(v => v.deleted_at == null));
+            // setFilteredMenuItems(response.data.items);
+            setFilteredItemsMenu(response.data.items.filter(v => v.deleted_at == null));
         } catch (error) {
-          console.error(
-            "Error fetching Items:",
-            error.response ? error.response.data : error.message
-          );
+            console.error(
+                "Error fetching Items:",
+                error.response ? error.response.data : error.message
+            );
         }
         setIsProcessing(false);
-      };
+    };
 
     const getSector = async () => {
         try {
@@ -214,7 +216,7 @@ const Home_pedidos_payment_edit = ({ item }) => {
                 },
             });
             // console.log(response.data);
-            setUser(response.data);
+            setUser(response.data[0]);
         } catch (error) {
             console.error(
                 "Error fetching user:",
@@ -241,14 +243,14 @@ const Home_pedidos_payment_edit = ({ item }) => {
         }
     };
 
-    const getuserRole = () => {
-        if (user && roles.length > 0) {
-            const role = roles.find((v) => v.id === user[0]?.role_id);
-            if (role) {
-                setUserRole(role.name);
-            }
-        }
-    };
+    // const getuserRole = () => {
+    //     if (user && roles.length > 0) {
+    //         const role = roles.find((v) => v.id === user[0]?.role_id);
+    //         if (role) {
+    //             setUserRole(role.name);
+    //         }
+    //     }
+    // };
 
     const getFamily = async () => {
         try {
@@ -397,7 +399,8 @@ const Home_pedidos_payment_edit = ({ item }) => {
                 `${apiUrl}/order/addItem`,
                 {
                     "order_id": id,
-                    "order_details": selectedItemsMenu
+                    "order_details": selectedItemsMenu,
+                    "admin_id":admin_id
                 },
                 {
                     headers: {
@@ -661,41 +664,45 @@ const Home_pedidos_payment_edit = ({ item }) => {
     };
 
     const handleCredit = () => {
-        navigate(`/home/client/crear/${id}`, { replace: true })
+        if (orderData?.status == 'delivered' || orderData?.status == "cancelled") {
+            navigate(`/home/client/crear/${id}`, { replace: true })
+        } else {
+            alert('No puedes crear un nuevo pedido si el pedido actual no ha sido entregado')
+        }
     }
 
     useEffect(() => {
-        if(id)
-        fetchCredit();
+        if (id)
+            fetchCredit();
     }, [id]);
 
     const [creditNote, setCreditNote] = useState(false);
 
-  const fetchCredit = async () => {
-    setIsProcessing(true);
-    try {
-        const response = await axios.post(`${apiUrl}/order/getCredit`, { admin_id: admin_id }, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    const fetchCredit = async () => {
+        setIsProcessing(true);
+        try {
+            const response = await axios.post(`${apiUrl}/order/getCredit`, { admin_id: admin_id }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-        console.log(response.data.data);
+            console.log(response.data.data);
 
 
-        const credit = response.data.data?.some((v) => v.order_id == id);
+            const credit = response.data.data?.some((v) => v.order_id == id);
 
-        setCreditNote(credit);
-        // console.log(credit);
+            setCreditNote(credit);
+            // console.log(credit);
 
-    } catch (error) {
-        console.error(
-            "Error fetching allOrder:",
-            error.response ? error.response.data : error.message
-        );
+        } catch (error) {
+            console.error(
+                "Error fetching allOrder:",
+                error.response ? error.response.data : error.message
+            );
+        }
+        setIsProcessing(false);
     }
-    setIsProcessing(false);
-}
 
 
     return (
@@ -718,7 +725,7 @@ const Home_pedidos_payment_edit = ({ item }) => {
                                 <div className='d-flex flex-wrap me-4'>
                                     {showCancelOrderButton ? (
                                         creditNote &&
-                                       ( <div onClick={handleCredit} className='btn bj-btn-outline-primary me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ borderRadius: '10px' }}> <BsCalculatorFill className='me-2' />Generar nota de crédito</div>)
+                                        (<div onClick={handleCredit} className='btn bj-btn-outline-primary me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ borderRadius: '10px' }}> <BsCalculatorFill className='me-2' />Generar nota de crédito</div>)
                                     ) : (
                                         <div onClick={handleShow1Prod} className='btn bj-btn-outline-primary me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ borderRadius: '10px' }}> <FaPlus className='me-2' />Agregar artículo</div>
                                     )}
@@ -967,7 +974,7 @@ const Home_pedidos_payment_edit = ({ item }) => {
                                                     </div>
                                                 </div>
                                                 <div className='mx-auto text-center mt-3'>
-                                                    <div onClick={handleShow20} className='btn text-white j-btn-primary w-100  border-0' style={{ padding: "8px 12px", borderRadius: "8px" }}>{orderData?.status !="cancelled" ? "Guardar cambios":"Pagar ahora"}</div>
+                                                    <div onClick={handleShow20} className='btn text-white j-btn-primary w-100  border-0' style={{ padding: "8px 12px", borderRadius: "8px" }}>{orderData?.status != "cancelled" ? "Guardar cambios" : "Pagar ahora"}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -991,21 +998,21 @@ const Home_pedidos_payment_edit = ({ item }) => {
                                     <div className='d-flex  flex-grow-1 gap-5 mx-4 m b_inputt b_id_input b_home_field  pt-3 '>
                                         <div className='w-100 b_search flex-grow-1  text-white mb-3'>
                                             <label htmlFor="inputPassword2" className="mb-2" style={{ fontSize: "14px" }}>Sector</label>
-                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2" value={sector?.name} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled/>
+                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2" value={sector?.name} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled />
                                         </div>
                                         <div className='w-100 flex-grow-1 b_search text-white mb-3'>
                                             <label htmlFor="inputPassword2" className="mb-2">Mesa</label>
-                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 "  value={table?.name ? `${table.name} (${table.id})` : '-'} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled />
+                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 " value={table?.name ? `${table.name} (${table.table_no})` : '-'} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled />
                                         </div>
                                     </div>
                                     <div className='d-flex  flex-grow-1 gap-5 mx-4 m b_inputt b_id_input b_home_field  pt-3 '>
                                         <div className='w-100 b_search flex-grow-1  text-white mb-3'>
                                             <label htmlFor="inputPassword2" className="mb-2" style={{ fontSize: "14px" }}>Cliente</label>
-                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2" value={orderData?.customer_name} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled/>
+                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2" value={orderData?.customer_name} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled />
                                         </div>
                                         <div className='w-100 flex-grow-1 b_search text-white mb-3'>
                                             <label htmlFor="inputPassword2" className="mb-2">Personas</label>
-                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 " value={orderData?.person} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled/>
+                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 " value={orderData?.person} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled />
                                         </div>
                                     </div>
 
@@ -1178,7 +1185,7 @@ const Home_pedidos_payment_edit = ({ item }) => {
                                     </div>
                                 </div>
                                 <div className="row p-2">
-                                {filteredItemsMenu.map((ele, index) => {
+                                    {filteredItemsMenu.map((ele, index) => {
                                         const isAdded = selectedItemsMenu.length > 0 ? selectedItemsMenu.some((v) => v.item_id == ele.id) : false;
                                         return (
                                             <div
@@ -1187,12 +1194,18 @@ const Home_pedidos_payment_edit = ({ item }) => {
                                             >
                                                 <div>
                                                     <div class="card m_bgblack text-white position-relative">
-                                                        <img
-                                                            src={`${API}/images/${ele.image}`}
-                                                            class="card-img-top object-fit-fill rounded"
-                                                            alt="..."
-                                                            style={{ height: "162px" }}
-                                                        />
+                                                        {ele.image ? (
+                                                            <img
+                                                                src={`${API}/images/${ele.image}`}
+                                                                className="card-img-top object-fit-cover rounded"
+                                                                alt={ele.name}
+                                                                style={{ height: "162px", objectFit: "cover" }}
+                                                            />
+                                                        ) : (
+                                                            <div className="d-flex justify-content-center align-items-center rounded" style={{ height: "200px", backgroundColor: 'rgb(55 65 81 / 34%)', color: 'white' }}>
+                                                                <p>{ele.name}</p>
+                                                            </div>
+                                                        )}
                                                         <div class="card-body">
                                                             <h6 class="card-title">{ele.name}</h6>
                                                             <h6 class="card-title">${ele.sale_price}</h6>

@@ -127,10 +127,10 @@ const Homeinfomation_payment_edit = ({ item }) => {
     }, [orderData, items, show1Prod, deleteProductId]);
 
     useEffect(() => {
-        if (user && roles.length > 0) {
-            getuserRole();
+        if (user) {
+            setUserRole(user.name);
         }
-    }, [user, roles]);
+    }, [user]);
 
     const getOrder = async () => {
         try {
@@ -151,21 +151,23 @@ const Homeinfomation_payment_edit = ({ item }) => {
     const getItems = async () => {
         // setIsProcessing(true);
         try {
-          const response = await axios.get(`${API_URL}/item/getAllDeletedAt`,{headers: {
-            Authorization: `Bearer ${token}`
-          }});
-          setItems(response.data.items);
-          setObj1(response.data.items.filter(v=> v.deleted_at == null));
-          // setFilteredMenuItems(response.data.items);
-          setFilteredItemsMenu(response.data.items.filter(v=> v.deleted_at == null));
+            const response = await axios.get(`${API_URL}/item/getAllDeletedAt`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setItems(response.data.items);
+            setObj1(response.data.items.filter(v => v.deleted_at == null));
+            // setFilteredMenuItems(response.data.items);
+            setFilteredItemsMenu(response.data.items.filter(v => v.deleted_at == null));
         } catch (error) {
-          console.error(
-            "Error fetching Items:",
-            error.response ? error.response.data : error.message
-          );
+            console.error(
+                "Error fetching Items:",
+                error.response ? error.response.data : error.message
+            );
         }
         // setIsProcessing(false);
-      };
+    };
 
     const getSector = async () => {
         try {
@@ -211,8 +213,8 @@ const Homeinfomation_payment_edit = ({ item }) => {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log(response.data);
-            setUser(response.data);
+            console.log(response.data[0]);
+            setUser(response.data[0]);
         } catch (error) {
             console.error(
                 "Error fetching user:",
@@ -239,14 +241,14 @@ const Homeinfomation_payment_edit = ({ item }) => {
         }
     };
 
-    const getuserRole = () => {
-        if (user && roles.length > 0) {
-            const role = roles.find((v) => v.id === user[0]?.role_id);
-            if (role) {
-                setUserRole(role.name);
-            }
-        }
-    };
+    // const getuserRole = () => {
+    //     if (user && roles.length > 0) {
+    //         const role = roles.find((v) => v.id === user[0]?.role_id);
+    //         if (role) {
+    //             setUserRole(role.name);
+    //         }
+    //     }
+    // };
 
     const getFamily = async () => {
         try {
@@ -395,7 +397,8 @@ const Homeinfomation_payment_edit = ({ item }) => {
                 `${API_URL}/order/addItem`,
                 {
                     "order_id": id,
-                    "order_details": selectedItemsMenu
+                    "order_details": selectedItemsMenu,
+                    "admin_id":admin_id
                 },
                 {
                     headers: {
@@ -642,36 +645,36 @@ const Homeinfomation_payment_edit = ({ item }) => {
     console.log(orderData);
     useEffect(() => {
         if (id)
-          fetchCredit();
-      }, [id]);
-    
-      const [creditNote, setCreditNote] = useState(false);
-    
-      const fetchCredit = async () => {
+            fetchCredit();
+    }, [id]);
+
+    const [creditNote, setCreditNote] = useState(false);
+
+    const fetchCredit = async () => {
         // setIsProcessing(true);
         try {
-          const response = await axios.post(`${API_URL}/order/getCredit`, { admin_id: admin_id }, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-    
-          console.log(response.data.data);
-    
-    
-          const credit = response.data.data?.some((v) => v.order_id == id);
-    
-          setCreditNote(credit);
-          // console.log(credit);
-    
+            const response = await axios.post(`${API_URL}/order/getCredit`, { admin_id: admin_id }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            console.log(response.data.data);
+
+
+            const credit = response.data.data?.some((v) => v.order_id == id);
+
+            setCreditNote(credit);
+            // console.log(credit);
+
         } catch (error) {
-          console.error(
-            "Error fetching allOrder:",
-            error.response ? error.response.data : error.message
-          );
+            console.error(
+                "Error fetching allOrder:",
+                error.response ? error.response.data : error.message
+            );
         }
         // setIsProcessing(false);
-      }
+    }
     return (
         <div>
             <div className="m_bg_black">
@@ -962,8 +965,8 @@ const Homeinfomation_payment_edit = ({ item }) => {
                                         </div>
                                         <div className='w-100 flex-grow-1 b_search text-white mb-3'>
                                             <label htmlFor="inputPassword2" className="mb-2">Mesa</label>
-                                            {console.log("tabke", table)}
-                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 " value={table?.name ? `${table.name} (${table.id})` : '-'} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} />
+
+                                            <input type="text" className="form-control bg-gray border-0 mt-2 py-2 " value={table?.name ? `${table.name} (${table.table_no})` : '-'} id="inputPassword2" placeholder="-" style={{ backgroundColor: '#242d38', borderRadius: "10px" }} />
                                         </div>
                                     </div>
                                     <div className='d-flex  flex-grow-1 gap-5 mx-4 m b_inputt b_id_input b_home_field  pt-3 '>
@@ -1155,12 +1158,18 @@ const Homeinfomation_payment_edit = ({ item }) => {
                                             >
                                                 <div>
                                                     <div class="card m_bgblack text-white position-relative">
-                                                        <img
-                                                            src={`${API}/images/${ele.image}`}
-                                                            class="card-img-top object-fit-fill rounded"
-                                                            alt="..."
-                                                            style={{ height: "162px" }}
-                                                        />
+                                                        {ele.image ? (
+                                                            <img
+                                                                src={`${API}/images/${ele.image}`}
+                                                                className="card-img-top object-fit-cover rounded"
+                                                                alt={ele.name}
+                                                                style={{ height: "162px", objectFit: "cover" }}
+                                                            />
+                                                        ) : (
+                                                            <div className="d-flex justify-content-center align-items-center rounded" style={{ height: "200px", backgroundColor: 'rgb(55 65 81 / 34%)', color: 'white' }}>
+                                                                <p>{ele.name}</p>
+                                                            </div>
+                                                        )}
                                                         <div class="card-body">
                                                             <h6 class="card-title">{ele.name}</h6>
                                                             <h6 class="card-title">${ele.sale_price}</h6>

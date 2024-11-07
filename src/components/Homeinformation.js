@@ -186,17 +186,19 @@ export default function Homeinformation() {
       handleOrderDetails();
       getSector();
     }
-    if (orderData?.user_id) {
+    if (orderData?.[0]?.user_id) {
       console.log(orderData?.user_id);
       getUser();
     }
   }, [orderData, items, show1Prod]);
 
   useEffect(() => {
-    if (user && roles.length > 0) {
-      getuserRole();
+    if (user) {
+      console.log(user);
+
+      setUserRole(user.name);
     }
-  }, [user, roles]);
+  }, [user]);
 
   useEffect(() => {
     getPaymentsData();
@@ -244,13 +246,15 @@ export default function Homeinformation() {
   const getItems = async () => {
     // setIsProcessing(true);
     try {
-      const response = await axios.get(`${API_URL}/item/getAllDeletedAt`,{headers: {
-        Authorization: `Bearer ${token}`
-      }});
+      const response = await axios.get(`${API_URL}/item/getAllDeletedAt`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setItems(response.data.items);
-      setObj1(response.data.items.filter(v=> v.deleted_at == null));
+      setObj1(response.data.items.filter(v => v.deleted_at == null));
       // setFilteredMenuItems(response.data.items);
-      setFilteredItemsMenu(response.data.items.filter(v=> v.deleted_at == null));
+      setFilteredItemsMenu(response.data.items.filter(v => v.deleted_at == null));
     } catch (error) {
       console.error(
         "Error fetching Items:",
@@ -271,14 +275,14 @@ export default function Homeinformation() {
       let sectors = response.data.data;
 
       const sectorWithTable = sectors.find(v =>
-        v.tables.some(a => a.id == orderData.table_id)
+        v.tables.some(a => a.id == orderData?.[0]?.table_id)
       );
 
       // console.log(sectors);
 
       if (sectorWithTable) {
         setSector(sectorWithTable);
-        setTable(sectorWithTable.tables.find(a => a.id == orderData.table_id));
+        setTable(sectorWithTable.tables.find(a => a.id == orderData?.[0]?.table_id));
       }
     } catch (error) {
       console.error(
@@ -313,13 +317,15 @@ export default function Homeinformation() {
     setIsProcessing(true);
 
     try {
-      const response = await axios.get(`${API_URL}/get-user/${orderData.user_id}`, {
+      console.log(orderData);
+
+      const response = await axios.get(`${API_URL}/get-user/${orderData?.[0].user_id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log(response.data);
-      setUser(response.data);
+      // console.log(response.data[0]);
+      setUser(response.data[0]);
     } catch (error) {
       console.error(
         "Error fetching user:",
@@ -352,14 +358,14 @@ export default function Homeinformation() {
 
   };
 
-  const getuserRole = () => {
-    if (user && roles.length > 0) {
-      const role = roles.find((v) => v.id === user[0].role_id);
-      if (role) {
-        setUserRole(role.name);
-      }
-    }
-  };
+  // const getuserRole = () => {
+  //   if (user && roles.length > 0) {
+  //     const role = roles.find((v) => v.id === user[0].role_id);
+  //     if (role) {
+  //       setUserRole(role.name);
+  //     }
+  //   }
+  // };
 
   const handleOrderDetails = () => {
     const details = orderData[0]?.order_details?.map((orderItem) => {
@@ -520,7 +526,8 @@ export default function Homeinformation() {
         `${API_URL}/order/addItem`,
         {
           "order_id": id,
-          "order_details": selectedItemsMenu
+          "order_details": selectedItemsMenu,
+          "admin_id":admin_id
         },
         {
           headers: {
@@ -559,7 +566,7 @@ export default function Homeinformation() {
   const toggleInput = (id, currentNote) => {
     setVisibleInputId(prevId => prevId === id ? null : id);
     if (visibleInputId !== id) { // Change prevId to visibleInputId
-        setNoteValues(currentNote); // Set the note value when toggling the input
+      setNoteValues(currentNote); // Set the note value when toggling the input
     }
   };
 
@@ -608,7 +615,7 @@ export default function Homeinformation() {
 
   const handleCredit = () => {
     { console.log(orderData) }
-    if (orderData?.[0].status == 'delivered') {
+    if (orderData?.[0].status == 'delivered' || orderData?.[0].status == 'cancelled') {
       navigate(`/home/client/crear/${id}`, { replace: true })
     } else {
       alert('No puedes crear un nuevo pedido si el pedido actual no ha sido entregado')
@@ -685,7 +692,7 @@ export default function Homeinformation() {
         count: v.quantity,
         note: v.notes ? v.notes : "",
         isEditing: false,
-        OdId:v.id
+        OdId: v.id
       }
       cartItems.push(obj)
     })
@@ -747,7 +754,7 @@ export default function Homeinformation() {
                 <div className='d-flex flex-wrap me-4'>
                   {showCancelOrderButton ? (
                     !(orderData?.[0].status == 'delivered' || orderData?.[0].status == 'finalized' || orderData?.[0].status == "cancelled") &&
-                    <div onClick={handleShow} className='btn btn-danger me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ backgroundColor: "#F05252", borderRadius: '10px' }}> <IoMdCloseCircle className='me-2' />Cancelar Pedido</div>
+                    <div onClick={handleShow} className='btn btn-danger me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ backgroundColor: "#F05252", borderRadius: '10px' }}> <IoMdCloseCircle className='me-2' />Anular pedido</div>
                   ) : (
                     !(orderData?.[0].status == "cancelled" || pamentDone) && <>
                       <Link className='text-decoration-none' to={`/home/usa/information/payment_edit/${id}`}>
@@ -757,9 +764,9 @@ export default function Homeinformation() {
                     </>
                   )}
                   {/* <div className='btn btn-primary me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ backgroundColor: "#147BDE", borderRadius: '10px' }}> <MdEditSquare className='me-2' />Editar Pedido</div> */}
-                 
- {showCancelOrderButton &&
-                  !creditNote &&
+
+                  {showCancelOrderButton &&
+                    !creditNote &&
                     (<div onClick={handleCredit} className='btn bj-btn-outline-primary me-2  text-nowrap  me-2 py-2 d-flex align-items-center justify-content-center' style={{ borderRadius: '10px' }}> <BsCalculatorFill className='me-2' />Generar nota de crédito</div>)
                   }
                 </div>
@@ -990,8 +997,8 @@ export default function Homeinformation() {
                           Datos
                         </div>
                         <div className={`bj-delivery-text-2  b_btn1 mb-3 p-0 text-nowrap d-flex  align-items-center justify-content-center 
-                                            ${orderData?.[0]?.status?.toLowerCase() === 'received' ? 'b_indigo' : orderData?.[0]?.status?.toLowerCase() === 'prepared' ? 'b_ora ' : orderData?.[0]?.status?.toLowerCase() === 'delivered' ? 'b_blue' : orderData?.[0]?.status?.toLowerCase() === 'finalized' ? 'b_green' : orderData?.[0]?.status?.toLowerCase() === 'withdraw' ? 'b_indigo' : orderData?.[0]?.status?.toLowerCase() === 'local' ? 'b_purple' : 'b_ora text-danger'}`}>
-                          {orderData?.[0]?.status?.toLowerCase() === 'received' ? 'Recibido' : orderData?.[0]?.status?.toLowerCase() === 'prepared' ? 'Preparado ' : orderData?.[0]?.status?.toLowerCase() === 'delivered' ? 'Entregado' : orderData?.[0]?.status?.toLowerCase() === 'finalized' ? 'Finalizado' : orderData?.[0]?.status?.toLowerCase() === 'withdraw' ? 'Retirar' : orderData?.[0]?.status?.toLowerCase() === 'local' ? 'Local' : orderData?.[0]?.status?.toLowerCase() === 'cancelled' ? 'Cancelar' : ' '}
+                                            ${pamentDone && orderData?.[0]?.status.toLowerCase() === 'delivered' ? 'b_blue ' : orderData?.[0]?.status?.toLowerCase() === 'received' ? 'b_indigo' : orderData?.[0]?.status?.toLowerCase() === 'prepared' ? 'b_ora ' : orderData?.[0]?.status?.toLowerCase() === 'delivered' ? 'b_blue' : orderData?.[0]?.status?.toLowerCase() === 'finalized' ? 'b_green' : orderData?.[0]?.status?.toLowerCase() === 'withdraw' ? 'b_indigo' : orderData?.[0]?.status?.toLowerCase() === 'local' ? 'b_purple' : 'b_ora text-danger'}`}>
+                          {pamentDone && orderData?.[0]?.status.toLowerCase() === 'delivered' ? 'Pagado ' : orderData?.[0]?.status?.toLowerCase() === 'received' ? 'Recibido' : orderData?.[0]?.status?.toLowerCase() === 'prepared' ? 'Preparado ' : orderData?.[0]?.status?.toLowerCase() === 'delivered' ? 'Entregado' : orderData?.[0]?.status?.toLowerCase() === 'finalized' ? 'Finalizado' : orderData?.[0]?.status?.toLowerCase() === 'withdraw' ? 'Retirar' : orderData?.[0]?.status?.toLowerCase() === 'local' ? 'Local' : orderData?.[0]?.status?.toLowerCase() === 'cancelled' ? 'Cancelar' : ' '}
                         </div>
                         {/* <div style={{ fontWeight: "600", borderRadius: "10px" }} className={`bj-delivery-text-2  b_btn1 mb-3   p-0 text-nowrap d-flex  align-items-center justify-content-center 
                         ${orderData?.order_type.toLowerCase() === 'local' ? 'b_indigo' : orderData?.order_type.toLowerCase() === 'order now' ? 'b_ora ' : orderData?.order_type.toLowerCase() === 'delivery' ? 'b_blue' : orderData?.order_type.toLowerCase() === 'uber' ? 'b_ora text-danger' : orderData?.order_type.toLowerCase().includes("with") ? 'b_purple' : 'b_ora text-danger'}`}>
@@ -1029,8 +1036,8 @@ export default function Homeinformation() {
                         <div className='mx-auto text-center mt-3'>
                           {!(orderData?.[0].status == "cancelled") &&
                             < div className='d-flex text-decoration-none'>
-                              {console.log("payment",pamentDone)}
-                              {!pamentDone  || (orderData?.[0].status.toLowerCase() !== 'finalized' && orderData?.[0].status.toLowerCase() !== 'delivered') ?
+                              {console.log("payment", pamentDone)}
+                              {!pamentDone || (orderData?.[0].status.toLowerCase() !== 'finalized' && orderData?.[0].status.toLowerCase() !== 'delivered') ?
                                 <div className='btn btn-primary w-100 my-4 bj-delivery-text-3' style={{ backgroundColor: "#147BDE", borderRadius: "8px", padding: "10px 20px" }} onClick={handlePayment} >Cobrar ahora</div> :
                                 ""
                               }
@@ -1049,7 +1056,7 @@ export default function Homeinformation() {
                   <div className='text-white ms-4 pt-4' >
                     <h5 >Información del pedido</h5>
                   </div>
-                {orderData?.[0]?.reason &&
+                  {orderData?.[0]?.reason &&
                     <div className='text-white ms-4 pt-4' >
                       <h5 className='bj-delivery-text-15'>Nota anulación</h5>
                       <textarea type="text" className="form-control bg-gray border-0 mt-4 py-2" id="inputPassword2" placeholder={orderData?.[0]?.reason != null ? orderData?.[0]?.reason : "Estaba sin sal"} style={{ backgroundColor: '#242d38', borderRadius: "10px" }} disabled></textarea>
@@ -1247,12 +1254,18 @@ export default function Homeinformation() {
                       >
                         <div>
                           <div class="card m_bgblack text-white position-relative">
-                            <img
-                              src={`${API}/images/${ele.image}`}
-                              class="card-img-top object-fit-fill rounded"
-                              alt="..."
-                              style={{ height: "162px" }}
-                            />
+                            {ele.image ? (
+                              <img
+                                src={`${API}/images/${ele.image}`}
+                                className="card-img-top object-fit-cover rounded"
+                                alt={ele.name}
+                                style={{ height: "162px", objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div className="d-flex justify-content-center align-items-center rounded" style={{ height: "200px", backgroundColor: 'rgb(55 65 81 / 34%)', color: 'white' }}>
+                                <p>{ele.name}</p>
+                              </div>
+                            )}
                             <div class="card-body">
                               <h6 class="card-title">{ele.name}</h6>
                               <h6 class="card-title">${ele.sale_price}</h6>

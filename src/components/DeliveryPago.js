@@ -33,6 +33,8 @@ const DeliveryPago = () => {
   const [orderType, setOrderType] = useState(
     JSON.parse(localStorage.getItem("currentOrder")) || []
   );
+  const [orderTypeError, setOrderTypeError] = useState("")
+
   const [tableId] = useState(
     JSON.parse(localStorage.getItem("tableId")) || null
   );
@@ -114,7 +116,7 @@ const DeliveryPago = () => {
     if (noteInputRefs.current[index]) {
       noteInputRefs.current[index].value = newNote;
     }
-    
+
     // Debounce the state update to reduce re-renders
     const timeoutId = setTimeout(() => {
       setCartItems(prevItems => {
@@ -134,7 +136,7 @@ const DeliveryPago = () => {
         : item
     );
     setCartItems(updatedCartItems);
-    
+
     // Focus the input after state update
     setTimeout(() => {
       if (noteInputRefs.current[index]) {
@@ -146,7 +148,7 @@ const DeliveryPago = () => {
   const handleFinishEditing = (index) => { // {{ edit_4 }}
     // Get final value from ref
     const finalNote = noteInputRefs.current[index]?.value || "";
-    
+
     setCartItems(prevItems => {
       const updatedItems = [...prevItems];
       updatedItems[index] = {
@@ -181,9 +183,9 @@ const DeliveryPago = () => {
     return (
       <div>
         {item.note ? (
-          <p 
-            className="j-nota-blue" 
-            style={{ cursor: "pointer" }} 
+          <p
+            className="j-nota-blue"
+            style={{ cursor: "pointer" }}
             onClick={() => handleAddNoteClick(index)}
           >
             {item.note}
@@ -299,21 +301,21 @@ const DeliveryPago = () => {
       const totalDue = finalTotal + taxAmount + tipAmount;
       const otherAmount = Math.max(totalDue - currentValue, 0);
 
-      console.log(otherAmount);
+      // console.log(otherAmount);
 
       const updatedState = {
         ...prevState,
         [name]: value,
       };
 
-      console.log(updatedState);
+      // console.log(updatedState);
 
 
       if (otherbox.length > 0) {
         const otherPaymentType = otherbox[0] + 'Amount';
         updatedState[otherPaymentType] = otherAmount.toFixed(2);
       }
-      console.log(updatedState);
+      // console.log(updatedState);
 
       // New calculation for turn
       const totalAmount = parseFloat(updatedState.cashAmount || 0) + parseFloat(updatedState.debitAmount || 0) + parseFloat(updatedState.creditAmount || 0) + parseFloat(updatedState.transferAmount || 0);
@@ -321,10 +323,10 @@ const DeliveryPago = () => {
       return updatedState;
 
     });
-    console.log("Payment", customerData);
+    // console.log("Payment", customerData);
     setFormErrors((prevState) => ({
       ...prevState,
-      [name]: undefined
+      amount: undefined
     }));
   };
 
@@ -418,6 +420,12 @@ const DeliveryPago = () => {
 
 
   const handleOrderTypeChange = (e) => {
+
+    if (e.target.value == 0) {
+      setOrderTypeError("Por favor seleccione un tipo de pedido");
+    } else {
+      setOrderTypeError("");
+    }
     const newOrderType = e.target.value;
     const updatedOrder = { ...orderType, orderType: newOrderType };
     setOrderType(updatedOrder);
@@ -457,6 +465,14 @@ const DeliveryPago = () => {
 
   // submit
   const handleSubmit = async () => {
+
+    if (!orderType || orderType?.orderType == 0) {
+      // console.log("Dgd");
+      // setOrderTypeError("Por favor seleccione tipo de pedido");
+      setOrderTypeError("Por favor seleccione un tipo de pedido");
+      return;
+    }
+
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       // Display errors to user
@@ -490,7 +506,7 @@ const DeliveryPago = () => {
         transaction_code: 1,
         order_details: orderDetails,
         box_id: boxId?.id != 'undefined' ? boxId?.id : '',
-        customer_name:payment.firstname || payment.business_name
+        customer_name: payment.firstname || payment.business_name
       }
 
     } else {
@@ -516,7 +532,7 @@ const DeliveryPago = () => {
           customer_name:
             payment.firstname && payment.firstname.trim() !== ""
               ? payment.firstname
-              : payment.business_name,
+              : payment.business_name || "",
           reason: "",
           person: "",
           tip: tipAmount,
@@ -535,17 +551,18 @@ const DeliveryPago = () => {
       admin_id: admin_id,
     };
 
-    console.log(paymentData);
+    // console.log(paymentData);
 
     setIsProcessing(true)
 
     try {
+      // console.log(orderData);
+
       const response = await axios.post(`${apiUrl}${url}`, orderData, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      // console.log(response.data)
-      if (response.data.success) {
-
+      console.log(response.data)
+      if (response.data.success || response.data[1] == 200) {
         try {
           const responsePayment = await axios.post(
             `${apiUrl}/payment/insert`,
@@ -587,6 +604,7 @@ const DeliveryPago = () => {
           console.log("Payment not done." + error.message);
         }
       } else {
+        console.log(response);
         alert(response.data.message)
       }
     } catch (error) {
@@ -970,11 +988,71 @@ const DeliveryPago = () => {
             className="j-counter-price bg_gay bg_margin position-sticky"
             style={{ top: "77px" }}
           >
-           <div className="j_position_fixed j_b_hd_width ak-position">
-              <h2 className="text-white j-kds-body-text-1000">Resumen</h2>
-              <div className="j-counter-price-data ak-w-100">
-                <h3 className="text-white j-kds-body-text-1000 w-100">Datos</h3>
-                <div className="b-date-time b_date_time2 d-flex flex-wrap column-gap-3 me-2 justify-content-end text-white">
+            <div className="j_position_fixed j_b_hd_width ak-position">
+              <div className="b-summary-center mb-4 align-items-center text-white d-flex justify-content-between">
+                {/* <div className="j_position_fixed j_b_hd_width"> */}
+                <h2 class="text-white j-kds-body-text-1000 mb-0">Resumen</h2>
+                {/* <FaXmark className="b-icon" /> */}
+              </div>
+              <div className="b-date-time d-flex flex-wrap column-gap-3 align-items-center justify-content-end text-white">
+                <div>
+                  <FaCalendarAlt className="mb-1" />
+                  <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleDateString('en-GB')}</p>
+                </div>
+                <div>
+                  <MdOutlineAccessTimeFilled className="mb-1" />
+                  <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+              <h3 className="text-white j-kds-body-text-1000 ak-w-100">Datos</h3>
+              {/* <h2 className="text-white j-kds-body-text-1000">Resumen</h2> */}
+              <div className="j-counter-price-data mt-3 ak-w-100">
+                <form className="d-flex flex-wrap w-100">
+                  <div className="j-orders-type ak-w-50">
+                    <label className="j-label-name  text-white mb-2 j-tbl-font-6 ">
+                      Tipo pedido
+                    </label>
+                    <select
+                      className="form-select j-input-name-2 j-input-name-23 ak-input"
+                      onChange={handleOrderTypeChange}
+                      value={orderType.orderType}
+                    // value={orType.orderType}
+                    >
+                      <option value="0">Seleccionar</option>
+                      <option value="delivery">Entrega</option>
+                      <option value="local">Local</option>
+                      <option value="withdraw">Retirar</option>
+                    </select>
+                    {orderTypeError && (
+                      <div className="text-danger errormessage">{orderTypeError}</div>
+                    )}
+                  </div>
+                  <div className="align-content-end mt-2 ak-w-50">
+                    {/* {console.log(orderType)} */}
+
+                    {(orderType && orderType.orderType != 0) && <div
+                      className={`bj-delivery-text-2  b_btn1 m-1 p-2 ${orderType.orderType?.toLowerCase() === 'local'
+                        ? 'b_indigo'
+                        : orderType.orderType?.toLowerCase() === 'delivery'
+                          ? 'b_blue'
+                          : orderType.orderType?.toLowerCase().includes("with")
+                            ? 'b_purple'
+                            : 'b_ora text-danger'
+                        }`}
+                    >
+                      {orderType.orderType?.toLowerCase() === 'local'
+                        ? 'Local'
+                        : orderType.orderType?.toLowerCase().includes("with")
+                          ? 'Retirar'
+                          : orderType.orderType?.toLowerCase() === 'delivery'
+                            ? 'Entrega'
+                            : orderType.orderType}
+                    </div>}
+
+                  </div>
+                </form>
+                {/* <h3 className="text-white j-kds-body-text-1000 w-100">Datos</h3> */}
+                {/* <div className="b-date-time b_date_time2 d-flex flex-wrap column-gap-3 me-2 justify-content-end text-white">
                   <div>
                     <FaCalendarAlt className="mb-2" />
                     <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleDateString('en-GB')}</p>
@@ -983,27 +1061,27 @@ const DeliveryPago = () => {
                     <MdOutlineAccessTimeFilled className="mb-2" />
                     <p className="mb-0 ms-2 d-inline-block">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                </div>
-                <div className="j_td_center">
+                </div> */}
+                {/* <div className="j_td_center">
                   <div className="j-busy-table j_busy_table_last d-flex align-items-center">
                     <div className=''>
                       <div style={{ fontWeight: "600", borderRadius: "10px" }} className={`bj-delivery-text-2  b_btn1 mb-3  p-0 text-nowrap d-flex  align-items-center justify-content-center 
                       ${orderType?.orderType.toLowerCase() === 'local' ? 'b_indigo' : orderType?.orderType?.toLowerCase() === 'order now' ? 'b_ora ' : orderType?.orderType?.toLowerCase() === 'delivery' ? 'b_blue' : orderType?.orderType?.toLowerCase() === 'uber' ? 'b_ora text-danger' : orderType?.orderType?.toLowerCase().includes("with") ? 'b_purple' : 'b_ora text-danger'}`}>
                         {orderType?.orderType?.toLowerCase() === 'local' ? 'Local' : orderType?.orderType?.toLowerCase().includes("with") ? 'Retiro ' : orderType?.orderType?.toLowerCase() === 'delivery' ? 'Entrega' : orderType?.orderType?.toLowerCase() === 'uber' ? 'Uber' : orderType?.orderType}
                       </div>
-                    </div>
-                    {/* <div className="j-b-table" /> */}
-                    {/* <p className="j-table-color j-tbl-font-6">Ocupado</p> */}
-                  </div>
+                    </div> */}
+                {/* <div className="j-b-table" /> */}
+                {/* <p className="j-table-color j-tbl-font-6">Ocupado</p> */}
+                {/* </div> */}
 
-                  {/* <div className="b-date-time b_date_time2 d-flex align-items-center justify-content-end text-white">
+                {/* <div className="b-date-time b_date_time2 d-flex align-items-center justify-content-end text-white">
                     <FaCalendarAlt />
                     <p className="mb-0 ms-2 me-3">{new Date().toLocaleDateString('en-GB')}</p>
                     <MdOutlineAccessTimeFilled />
                     <p className="mb-0 ms-2">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div> */}
 
-                  {/* <div className="b-date-time b_date_time2  d-flex align-items-center">
+                {/* <div className="b-date-time b_date_time2  d-flex align-items-center">
                     <svg
                       class="j-canvas-svg-i"
                       aria-hidden="true"
@@ -1024,9 +1102,9 @@ const DeliveryPago = () => {
                       {elapsedTime}
                     </p>
                   </div> */}
-                </div>
+                {/* </div> */}
 
-                <div className="j-orders-inputs j_td_inputs ak-w-100">
+                {/* <div className="j-orders-inputs j_td_inputs ak-w-100">
                   <div className="j-orders-code ak-w-100">
                     <label className="j-label-name text-white mb-2 j-tbl-btn-font-1">
                       Quién registra
@@ -1040,8 +1118,8 @@ const DeliveryPago = () => {
                         value={userName}
                       />
                     </div>
-                  </div>
-                  {/* <div className="j-orders-code">
+                  </div> */}
+                {/* <div className="j-orders-code">
                         <label className="j-label-name j-tbl-btn-font-1 text-white mb-2">
                           Personas
                         </label>
@@ -1053,7 +1131,7 @@ const DeliveryPago = () => {
                                      value={tableData[0]?.person} />
                          </div>
                          </div> */}
-                </div>
+                {/* </div> */}
 
                 {/* <div className="j-orders-inputs j_inputs_block">
                   <div className="j-orders-code">
@@ -1099,8 +1177,8 @@ const DeliveryPago = () => {
                   </div>
                 ) : (
                   <div className="ak-w-100">
-                  <div className="j-counter-order ak-w-100">
-                    <h3 className="text-white j-tbl-font-5 ak-w-100">Pedido </h3>
+                    <div className="j-counter-order ak-w-100">
+                      <h3 className="text-white j-tbl-font-5 ak-w-100">Pedido </h3>
                       <div
                         className={`j-counter-order-data ${cartItems.length ===
                           0
@@ -1126,7 +1204,7 @@ const DeliveryPago = () => {
                                 </div>
                                 <div className="d-flex align-items-center">
                                   <div className="j-counter-mix j-counter-mix-remove">
-                                  <h3 className="mx-auto ps-2">{item.count}</h3>
+                                    <h3 className="mx-auto ps-2">{item.count}</h3>
                                   </div>
                                   <h4 className="text-white fw-semibold j_item_price d-flex">
                                     ${parseInt(item.price) * item.count}

@@ -39,6 +39,7 @@ const Tables = () => {
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const { playNotificationSound } = useAudioManager();
+  const [selectedTabNo,setSelectedTabNo] = useState('');
 
   const [newTable, setNewTable] = useState({
     sectorName: "",
@@ -207,13 +208,19 @@ const Tables = () => {
   // Modify handleChange function
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setAddsector({
-      ...addsector,
-      [name]: value
-    });
+
+
+    addsector[name] = value;
+    // setAddsector({
+    //   ...addsector,
+    //   [name]: value
+    // });
     // Clear error when user types
-    setCreateErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
+    if(createErrors[name]){
+      setCreateErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
+    }
   };
+
   const handleNewTableChange = (e) => {
     const { name, value } = e.target;
     setNewTable((prev) => ({
@@ -468,10 +475,13 @@ const Tables = () => {
   //edit sector
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setSelectedFamily((prevFamily) => ({
-      ...prevFamily,
-      [name]: value
-    }));
+
+    selectedFamily[name] = value;
+
+    // setSelectedFamily((prevFamily) => ({
+    //   ...prevFamily,
+    //   [name]: value
+    // }));
   };
 
   const hundleEditDeletePop = (sector) => {
@@ -669,11 +679,12 @@ const Tables = () => {
     // });
     // console.log("Updated Cards:", updatedCards);
   };
-  const handleShowAvailableModal = (id) => {
+  const handleShowAvailableModal = (id,no) => {
     setSelectedTable(id);
     setShowAvailableModal(true);
     setShowOcupadoModal(false);
     setIsOffcanvasOpen(true);
+    setSelectedTabNo(no);
   };
 
   const handleCloseOcupadoModal = async () => {
@@ -702,11 +713,12 @@ const Tables = () => {
     setSelectedTable(null); // for socket 
   };
 
-  const handleShowOcupadoModal = (id) => {
+  const handleShowOcupadoModal = (id,no) => {
     setSelectedTable(id);
     setShowOcupadoModal(true);
     setShowAvailableModal(false);
     setIsOffcanvasOpen(true);
+    setSelectedTabNo(no);
   };
 
   /* get name and image */
@@ -753,26 +765,21 @@ const Tables = () => {
 
   const handleSubmitNote = async (e, index, oId) => {
     e.preventDefault();
-    const finalNote = e.target.elements[0]?.value.trim() || e.target.value; // Use optional chaining
+    
+    // Get the note value, handling both form submit and blur events
+    let finalNote;
+    if (e.target.elements) {
+        // Form submit event
+        finalNote = e.target.elements[0]?.value.trim();
+    } else if (e.target.value) {
+        // Direct input blur event
+        finalNote = e.target.value.trim();
+    } else {
+        // Fallback
+        return;
+    }
+
     if (finalNote) {
-        const flatIndex = tableData?.flatMap((t) => t.items)?.findIndex((_, i) => i === index); // Check if tableData is defined
-        if (flatIndex === -1) return; // If not found, exit early
-
-        const tableIndex = tableData?.findIndex((t) =>
-            t.items.includes(tableData.flatMap((t) => t.items)[flatIndex])
-        );
-
-        if (tableIndex === -1) return; // If not found, exit early
-
-        const itemIndex = tableData[tableIndex]?.items?.findIndex(
-            (item) => item === tableData.flatMap((t) => t.items)[flatIndex]
-        );
-
-        if (itemIndex === -1) return; // If not found, exit early
-
-        const tableId = tableData[tableIndex].id;
-        const itemId = tableData[tableIndex].items[itemIndex].item_id;
-
         const success = await addNoteToDatabase(oId, finalNote);
 
         if (success) {
@@ -1142,6 +1149,7 @@ const Tables = () => {
   // });
 
 
+
   return (
     <section>
       <Header />
@@ -1201,7 +1209,7 @@ const Tables = () => {
                           className="form-control j-table_input"
                           id="exampleFormControlInput1"
                           placeholder="Eje. Sector 1"
-                          value={addsector.name}
+                          // value={addsector.name}
                           name="name"
                           onChange={handleChange}
                         />
@@ -1224,7 +1232,7 @@ const Tables = () => {
                           id="exampleFormControlInput1"
                           placeholder="0"
                           name="noOfTables"
-                          value={addsector.noOfTables}
+                          // value={addsector.noOfTables}
                           onChange={handleChange}
                         />
                         {createErrors.noOfTables && (
@@ -1305,6 +1313,7 @@ const Tables = () => {
                   <div className="py-3 m_borbot ms-3 pe-3 me-3 ">
                     {Array.isArray(checkboxes) ? (
                       checkboxes.map((item, index) => (
+                        // console.log(item),
                         <div key={item.id}>
                           <div className="d-flex justify-content-between align-items-center">
                             <div className="text-nowrap">
@@ -1506,14 +1515,16 @@ const Tables = () => {
                       <TableCard
                         isOffcanvasOpen={isOffcanvasOpen}
                         onShowAvailableModal={() =>
-                          handleShowAvailableModal(ele.id)}
-                        onShowOcupadoModal={() => handleShowOcupadoModal(ele.id)}
+                          handleShowAvailableModal(ele.id,ele.table_no)}
+                        onShowOcupadoModal={() => handleShowOcupadoModal(ele.id,ele.table_no)}
                         name={ele.name}
                         no={ele.id}
                         code={ele.code}
                         status={ele.status}
                         selectedTable={selectedTable}
+                       
                         tId={ele.id}
+                        tableId={ele.table_no}
                         userId={ele.user_id} // Access user_id from tableData
                         oId={ele.order_id}
                         selectedCards={selectedCards}
@@ -1564,7 +1575,7 @@ const Tables = () => {
                 className="form-control j-table_input"
                 id="exampleFormControlInput1"
                 placeholder="Sector 1"
-                value={selectedFamily.name}
+                defaultValue={selectedFamily.name}
                 name="name"
                 onChange={handleEditChange}
               />
@@ -1587,7 +1598,7 @@ const Tables = () => {
                 id="exampleFormControlInput1"
                 placeholder="10"
                 name="noOfTables"
-                value={selectedFamily.noOfTables}
+                defaultValue={selectedFamily.noOfTables}
                 onChange={handleEditChange}
                 disabled
               />
@@ -1702,7 +1713,7 @@ const Tables = () => {
         >
           <Offcanvas.Header closeButton className="j-close-btn">
             <Offcanvas.Title className="j-offcanvas-title text-white j-tbl-font-5">
-              Mesa {selectedTable}
+              Mesa {selectedTabNo}
             </Offcanvas.Title>
           </Offcanvas.Header>
           <Offcanvas.Body className="j-canvas-buttons">
@@ -1799,7 +1810,7 @@ const Tables = () => {
         >
           <Offcanvas.Header closeButton className="j-close-btn">
             <Offcanvas.Title className="j-offcanvas-title text-white j-tbl-font-5">
-              Mesa {selectedTable}
+              Mesa {selectedTabNo}
             </Offcanvas.Title>
           </Offcanvas.Header>
           <Offcanvas.Body className="j-canvas-buttons">
@@ -2006,11 +2017,13 @@ const Tables = () => {
                                           type="text"
                                           defaultValue={item.notes || ""}
                                           autoFocus
+                                          onBlur={(e) => handleSubmitNote(e, index, item.id)}    
                                         />
                                       </form>
                                     ) : (
-                                      <span className="j-nota-blue" onClick={() =>
-                                        handleAddNoteClick(index)}>
+                                      <span  className="j-nota-blue" onClick={() =>
+                                        handleAddNoteClick(index)}
+                                        style={{cursor: "pointer"}}>
                                         Nota: {item.notes}
                                       </span>
                                     )
@@ -2030,6 +2043,7 @@ const Tables = () => {
                                             type="text"
                                             defaultValue={item.notes || ""}
                                             autoFocus
+                                            onBlur={(e) => handleSubmitNote(e, index, item.id)}
                                           />
                                         </form>
                                       ) : (
@@ -2225,12 +2239,7 @@ const Tables = () => {
                                       <form
                                         onSubmit={(e) =>
                                           handleSubmitNote(e, index, item.id)}
-                                        onBlur={(e) => {
-                                          // Check if the target is not the input
-                                          if (!e.currentTarget.contains(e.relatedTarget)) {
-                                            handleSubmitNote(e, index, item.id);
-                                          }
-                                        }}
+                                        onBlur={(e) => handleSubmitNote(e, index, item.id)}
                                       >
                                         <span className="j-nota-blue">
                                           Nota:{" "}
@@ -2244,7 +2253,8 @@ const Tables = () => {
                                       </form>
                                     ) : (
                                       <span className="j-nota-blue" onClick={() =>
-                                        handleAddNoteClick(index)}>
+                                        handleAddNoteClick(index)}
+                                        style={{cursor: "pointer"}}>
                                         Nota: {item.notes}
                                       </span>
                                     )
@@ -2254,12 +2264,7 @@ const Tables = () => {
                                         <form
                                           onSubmit={(e) =>
                                             handleSubmitNote(e, index, item.id)}
-                                          onBlur={(e) => {
-                                            // Check if the target is not the input
-                                            if (!e.currentTarget.contains(e.relatedTarget)) {
-                                              handleSubmitNote(e, index, item.id);
-                                            }
-                                          }}
+                                          onBlur={(e) => handleSubmitNote(e, index, item.id)}
                                         >
                                           <span className="j-nota-blue">
                                             Nota:{" "}
